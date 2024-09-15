@@ -5,6 +5,7 @@ from lab1.ui.view_edit_tab import ViewEditTab
 from lab1.encryption import generate_key, encrypt
 import os
 
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -20,15 +21,15 @@ class MainWindow(QWidget):
         self.view_edit_tab = ViewEditTab()
         self.tabs.addTab(self.view_edit_tab, "Просмотр и изменение")
 
-        # Вторая вкладка: Другой функционал (например, шифрование/расшифрование)
+        # Вторая вкладка: шифрование/расшифрование
         self.other_tab = QWidget()
         other_layout = QVBoxLayout()
 
-        self.encrypt_button = QPushButton('Шифровать файл')
+        self.encrypt_button = QPushButton('Шифровать файл однократным гаммированием')
         self.encrypt_button.clicked.connect(self.encrypt_file)
         other_layout.addWidget(self.encrypt_button)
 
-        self.decrypt_button = QPushButton('Расшифровать файл')
+        self.decrypt_button = QPushButton('Расшифровать файл однократным гаммированием')
         self.decrypt_button.clicked.connect(self.decrypt_file)
         other_layout.addWidget(self.decrypt_button)
 

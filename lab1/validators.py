@@ -20,3 +20,8 @@ def validate_text(data):
         return True
     except UnicodeEncodeError:
         return False
+
+
+def validate_length(original_length, new_data):
+    """Проверяет, что новая строка имеет такую же длину, что и оригинальная."""
+    return len(original_length) == len(new_data)

@@ -14,6 +14,11 @@ class ViewEditTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.initUI()
+        self.original_lengths = {
+            'key': 0,
+            'message': 0,
+            'encrypted': 0
+        }
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -87,9 +92,11 @@ class ViewEditTab(QWidget):
                 self.key_data = key_file.read()
             format_type = self.key_format_selector.currentText()
             self.display_data_in_editor(self.key_data, format_type, self.key_editor)
+            self.original_lengths['key'] = len(self.key_data)
 
     def save_key(self):
-        self.save_data_from_editor(self.key_editor, self.key_format_selector.currentText(), 'Key Files (*.key)')
+        if self.check_length(self.key_editor.toPlainText().strip(), 'key'):
+            self.save_data_from_editor(self.key_editor, self.key_format_selector.currentText(), 'Key Files (*.key)')
 
     def load_message(self):
         file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть исходное сообщение', '', 'Text Files (*.txt)')
@@ -98,6 +105,7 @@ class ViewEditTab(QWidget):
                 self.message_data = file.read()
             format_type = self.message_format_selector.currentText()
             self.display_data_in_editor(self.message_data, format_type, self.message_editor)
+            self.original_lengths['message'] = len(self.message_data)
 
     def save_message(self):
         self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(), 'Text Files (*.txt)')
@@ -109,9 +117,39 @@ class ViewEditTab(QWidget):
                 self.encrypted_data = file.read()
             format_type = self.encrypted_format_selector.currentText()
             self.display_data_in_editor(self.encrypted_data, format_type, self.encrypted_editor)
+            self.original_lengths['encrypted'] = len(self.encrypted_data)
 
     def save_encrypted_message(self):
-        self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(), 'Encrypted Files (*.enc)')
+        if self.check_length(self.encrypted_editor.toPlainText().strip(), 'encrypted'):
+            self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(), 'Encrypted Files (*.enc)')
+
+    def check_length(self, data, data_type):
+        try:
+            if data_type == 'key':
+                expected_length = self.original_lengths['key']
+                if self.key_format_selector.currentText() == "Двоичный":
+                    data_length = len(binary_to_bytes(data))
+                elif self.key_format_selector.currentText() == "Шестнадцатеричный":
+                    data_length = len(hex_to_bytes(data))
+                else:
+                    data_length = len(data.encode('utf-8'))
+            elif data_type == 'encrypted':
+                expected_length = self.original_lengths['encrypted']
+                if self.encrypted_format_selector.currentText() == "Двоичный":
+                    data_length = len(binary_to_bytes(data))
+                elif self.encrypted_format_selector.currentText() == "Шестнадцатеричный":
+                    data_length = len(hex_to_bytes(data))
+                else:
+                    data_length = len(data.encode('utf-8'))
+            else:
+                return True  # Исходное сообщение не проверяется
+
+            if data_length != expected_length:
+                raise ValueError("Длина данных не соответствует исходной длине.")
+            return True
+        except ValueError as ve:
+            QMessageBox.warning(self, "Ошибка", str(ve))
+            return False
 
     def save_data_from_editor(self, editor, format_type, file_filter):
         data = editor.toPlainText().strip()
