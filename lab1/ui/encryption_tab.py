@@ -97,30 +97,36 @@ class EncryptionTab(QWidget):
         QMessageBox.information(self, "Успех", "Файл успешно расшифрован.")
 
     def scramble_encrypt_file(self):
+        scrambler_type = self.scrambler_selector.currentText()
+        scrambler_iv = self.scrambler_iv_input.text()
+
+        # Проверка длины начального значения (IV) в битах
+        required_iv_length = 11  # Ожидаем 11 бит для обоих полиномов
+        if len(scrambler_iv) != required_iv_length:
+            QMessageBox.warning(self, "Ошибка",
+                                f"Начальное значение скремблера должно быть {required_iv_length} символов.")
+            return
+
+        # Если длина корректна, продолжаем выполнение
         file_path, _ = QFileDialog.getOpenFileName(self, 'Выберите файл для шифрования', '', 'All Files (*)')
         if not file_path:
             return
 
-        enc_file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить зашифрованный файл', '', 'Encrypted Files (*.enc)')
+        enc_file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить зашифрованный файл', '',
+                                                       'Encrypted Files (*.enc)')
         if not enc_file_path:
             return
 
-        scrambler_type = self.scrambler_selector.currentText()
-        scrambler_iv = self.scrambler_iv_input.text()
+        try:
+            with open(file_path, 'rb') as f:
+                data = f.read()
 
-        if not scrambler_iv:
-            QMessageBox.warning(self, "Ошибка", "Начальное значение скремблера не может быть пустым.")
-            return
+            encrypted_data = scramble_encrypt(data, scrambler_type, scrambler_iv)
 
-        with open(file_path, 'rb') as f:
-            data = f.read()
+            with open(enc_file_path, 'wb') as enc_file:
+                enc_file.write(encrypted_data)
 
-        encrypted_data = scramble_encrypt(data, scrambler_type, scrambler_iv)
-
-        with open(enc_file_path, 'wb') as enc_file:
-            enc_file.write(encrypted_data)
-
-        QMessageBox.information(self, "Успех", "Файл успешно зашифрован скремблером.")
-
-
+            QMessageBox.information(self, "Успех", "Файл успешно зашифрован скремблером.")
+        except ValueError as e:
+            QMessageBox.warning(self, "Ошибка", str(e))
 

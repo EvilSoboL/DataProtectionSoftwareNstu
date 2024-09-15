@@ -10,35 +10,38 @@ def encrypt(data, key):
 
 
 def lfsr(polynomial, seed, length):
-    """Генерация псевдослучайной последовательности на основе LFSR."""
-    state = seed
+    """Генерация псевдослучайной последовательности на основе LFSR с начальным значением (IV)."""
+    state = seed  # Начальное значение (IV)
     output = bytearray()
 
     for _ in range(length):
-        # Сдвиг и генерация нового бита
         new_bit = 0
         for tap in polynomial:
             new_bit ^= (state >> tap) & 1
         state = (state << 1) | new_bit
-        state &= (1 << max(polynomial)) - 1  # Ограничение длины регистра
+        state &= (1 << max(polynomial)) - 1  # Ограничиваем длину регистра
         output.append(state & 0xFF)
 
     return bytes(output)
 
 
 def scramble_encrypt(data, scrambler_type, iv):
-    # Преобразование IV в число
-    iv_bytes = iv.encode('utf-8')
-    iv_int = int.from_bytes(iv_bytes, 'big')
-
+    # Определяем длину регистра в зависимости от типа скремблера
     if scrambler_type == "x^11 + x^5 + x^2 + 1":
-        # Полином для скремблера x^11 + x^5 + x^2 + 1
+        register_length = 11
         polynomial = [11, 5, 2, 0]
     elif scrambler_type == "x^11 + x^2 + 1":
-        # Полином для скремблера x^11 + x^2 + 1
+        register_length = 11
         polynomial = [11, 2, 0]
     else:
         raise ValueError("Неизвестный тип скремблера")
+
+    # Проверка длины IV
+    if len(iv) != register_length:
+        raise ValueError(f"Начальное значение скремблера должно быть {register_length} бит.")
+
+    # Преобразование IV в целое число
+    iv_int = int(iv, 2)  # Ожидаем, что IV введен как двоичная строка
 
     # Генерация псевдослучайной последовательности на основе LFSR
     lfsr_output = lfsr(polynomial, iv_int, len(data))
