@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QComboBox, QFileDialog, QMessageBox, QLabel, QLineEdit
-from lab1.encryption import generate_key, encrypt, scramble_encrypt
+from lab1.encryption import generate_key, encrypt, scramble_encrypt, scramble_decrypt
 import os
 
 class EncryptionTab(QWidget):
@@ -35,6 +35,11 @@ class EncryptionTab(QWidget):
         self.scramble_encrypt_button = QPushButton('Шифровать файл скремблером')
         self.scramble_encrypt_button.clicked.connect(self.scramble_encrypt_file)
         layout.addWidget(self.scramble_encrypt_button)
+
+        # Кнопка для расшифровки скремблером
+        self.scramble_decrypt_button = QPushButton('Расшифровать файл скремблером')
+        self.scramble_decrypt_button.clicked.connect(self.scramble_decrypt_file)
+        layout.addWidget(self.scramble_decrypt_button)
 
         self.setLayout(layout)
 
@@ -103,17 +108,14 @@ class EncryptionTab(QWidget):
         # Проверка длины начального значения (IV) в битах
         required_iv_length = 11  # Ожидаем 11 бит для обоих полиномов
         if len(scrambler_iv) != required_iv_length:
-            QMessageBox.warning(self, "Ошибка",
-                                f"Начальное значение скремблера должно быть {required_iv_length} символов.")
+            QMessageBox.warning(self, "Ошибка", f"Начальное значение скремблера должно быть {required_iv_length} символов.")
             return
 
-        # Если длина корректна, продолжаем выполнение
         file_path, _ = QFileDialog.getOpenFileName(self, 'Выберите файл для шифрования', '', 'All Files (*)')
         if not file_path:
             return
 
-        enc_file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить зашифрованный файл', '',
-                                                       'Encrypted Files (*.enc)')
+        enc_file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить зашифрованный файл', '', 'Encrypted Files (*.enc)')
         if not enc_file_path:
             return
 
@@ -129,4 +131,36 @@ class EncryptionTab(QWidget):
             QMessageBox.information(self, "Успех", "Файл успешно зашифрован скремблером.")
         except ValueError as e:
             QMessageBox.warning(self, "Ошибка", str(e))
+
+    def scramble_decrypt_file(self):
+        scrambler_type = self.scrambler_selector.currentText()
+        scrambler_iv = self.scrambler_iv_input.text()
+
+        # Проверка длины начального значения (IV) в битах
+        required_iv_length = 11  # Ожидаем 11 бит для обоих полиномов
+        if len(scrambler_iv) != required_iv_length:
+            QMessageBox.warning(self, "Ошибка", f"Начальное значение скремблера должно быть {required_iv_length} символов.")
+            return
+
+        enc_file_path, _ = QFileDialog.getOpenFileName(self, 'Выберите зашифрованный файл', '', 'Encrypted Files (*.enc)')
+        if not enc_file_path:
+            return
+
+        dec_file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить расшифрованный файл', '', 'All Files (*)')
+        if not dec_file_path:
+            return
+
+        try:
+            with open(enc_file_path, 'rb') as enc_file:
+                encrypted_data = enc_file.read()
+
+            decrypted_data = scramble_decrypt(encrypted_data, scrambler_type, scrambler_iv)
+
+            with open(dec_file_path, 'wb') as dec_file:
+                dec_file.write(decrypted_data)
+
+            QMessageBox.information(self, "Успех", "Файл успешно расшифрован скремблером.")
+        except ValueError as e:
+            QMessageBox.warning(self, "Ошибка", str(e))
+
 

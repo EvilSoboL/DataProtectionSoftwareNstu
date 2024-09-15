@@ -1,13 +1,10 @@
 import os
 
-
 def generate_key(length):
     return os.urandom(length)
 
-
 def encrypt(data, key):
     return bytes(a ^ b for a, b in zip(data, key))
-
 
 def lfsr(polynomial, seed, length):
     """Генерация псевдослучайной последовательности на основе LFSR с начальным значением (IV)."""
@@ -24,8 +21,8 @@ def lfsr(polynomial, seed, length):
 
     return bytes(output)
 
-
 def scramble_encrypt(data, scrambler_type, iv):
+    """Шифрование данных с использованием скремблера."""
     # Определяем длину регистра в зависимости от типа скремблера
     if scrambler_type == "x^11 + x^5 + x^2 + 1":
         register_length = 11
@@ -50,4 +47,9 @@ def scramble_encrypt(data, scrambler_type, iv):
     encrypted_data = bytes([b ^ lfsr_output[i] for i, b in enumerate(data)])
 
     return encrypted_data
+
+def scramble_decrypt(data, scrambler_type, iv):
+    """Расшифровка данных, зашифрованных скремблером."""
+    # Процесс расшифровки идентичен шифрованию, так как алгоритм симметричный
+    return scramble_encrypt(data, scrambler_type, iv)
 
