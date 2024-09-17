@@ -1,4 +1,5 @@
 import os
+import base64  # Для кодирования/декодирования в base64
 
 def generate_key(length):
     return os.urandom(length)
@@ -46,10 +47,17 @@ def scramble_encrypt(data, scrambler_type, iv):
     # Шифрование XOR с псевдослучайной последовательностью
     encrypted_data = bytes([b ^ lfsr_output[i] for i, b in enumerate(data)])
 
-    return encrypted_data
+    # Преобразуем зашифрованные данные в Base64 для корректного текстового представления
+    encrypted_base64 = base64.b64encode(encrypted_data).decode('utf-8')
+
+    return encrypted_base64
 
 def scramble_decrypt(data, scrambler_type, iv):
     """Расшифровка данных, зашифрованных скремблером."""
-    # Процесс расшифровки идентичен шифрованию, так как алгоритм симметричный
-    return scramble_encrypt(data, scrambler_type, iv)
+    # Декодируем данные из Base64 обратно в байты
+    encrypted_data = base64.b64decode(data)
+
+    # Расшифровка по тому же принципу
+    return scramble_encrypt(encrypted_data, scrambler_type, iv)
+
 

@@ -76,7 +76,6 @@ class ViewEditTab(QWidget):
 
         self.setLayout(layout)
 
-
     def display_data_in_editor(self, data, format_type, editor):
         if format_type == "Двоичный":
             editor.setPlainText(bytes_to_binary(data))
@@ -111,7 +110,8 @@ class ViewEditTab(QWidget):
         self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(), 'Text Files (*.txt)')
 
     def load_encrypted_message(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть зашифрованное сообщение', '', 'Encrypted Files (*.enc)')
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть зашифрованное сообщение', '',
+                                                   'Encrypted Files (*.enc)')
         if file_path:
             with open(file_path, 'rb') as file:
                 self.encrypted_data = file.read()
@@ -163,7 +163,7 @@ class ViewEditTab(QWidget):
                     raise ValueError("Некорректный шестнадцатеричный формат.")
                 data_bytes = hex_to_bytes(data)
             elif format_type == "Символьный":
-                data_bytes = text_to_bytes(data)
+                data_bytes = text_to_bytes(data)  # Преобразование символьного представления в байты
             else:
                 raise ValueError("Неизвестный формат.")
 
@@ -174,3 +174,12 @@ class ViewEditTab(QWidget):
                 QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
         except ValueError as ve:
             QMessageBox.warning(self, "Ошибка", str(ve))
+
+            file_path, _ = QFileDialog.getSaveFileName(self, f'Сохранить {file_filter}', '', file_filter)
+            if file_path:
+                with open(file_path, 'wb') as file:
+                    file.write(data_bytes)
+                QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
+        except ValueError as ve:
+            QMessageBox.warning(self, "Ошибка", str(ve))
+
