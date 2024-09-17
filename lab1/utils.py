@@ -1,6 +1,6 @@
 def bytes_to_binary(data):
     """Преобразует байты в строку двоичного представления."""
-    return ' '.join(f'{byte:08b}' for byte in data)
+    return ' '.join(format(byte, '08b') for byte in data)
 
 
 def bytes_to_hex(data):
@@ -11,8 +11,10 @@ def bytes_to_hex(data):
 def bytes_to_text(data):
     """Преобразует байты в строку текста (Windows-1251)."""
     try:
+        # Попробуем декодировать байты напрямую в Windows-1251
         return data.decode('windows-1251')
     except UnicodeDecodeError:
+        # Если не удалось декодировать, возвращаем шестнадцатеричное представление
         return bytes_to_hex(data)
 
 
