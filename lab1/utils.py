@@ -9,11 +9,13 @@ def bytes_to_hex(data):
 
 
 def bytes_to_text(data):
-    """Преобразует байты в строку текста (UTF-8)."""
+    """Преобразует байты в строку текста (Windows-1251)."""
     try:
-        return data.decode('utf-8')
+        # Попробуем декодировать байты напрямую в Windows-1251
+        return data.decode('windows-1251')
     except UnicodeDecodeError:
-        return '<Некорректные символы для UTF-8>'
+        # Если не удалось декодировать, возвращаем шестнадцатеричное представление
+        return bytes_to_hex(data)
 
 
 def binary_to_bytes(data):
@@ -33,5 +35,8 @@ def hex_to_bytes(data):
 
 
 def text_to_bytes(data):
-    """Преобразует строку текста в байты (UTF-8)."""
-    return data.encode('utf-8')
+    """Преобразует строку текста (Windows-1251) обратно в байты."""
+    try:
+        return data.encode('windows-1251')
+    except UnicodeEncodeError:
+        raise ValueError("Некорректный текст для кодировки Windows-1251.")

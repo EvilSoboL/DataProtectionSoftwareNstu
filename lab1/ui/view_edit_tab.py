@@ -108,7 +108,8 @@ class ViewEditTab(QWidget):
             self.original_lengths['message'] = len(self.message_data)
 
     def save_message(self):
-        self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(), 'Text Files (*.txt)')
+        self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(),
+                                   'Text Files (*.txt)')
 
     def load_encrypted_message(self):
         file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть зашифрованное сообщение', '', 'Encrypted Files (*.enc)')
