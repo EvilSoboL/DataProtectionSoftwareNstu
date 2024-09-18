@@ -16,7 +16,7 @@ class ViewEditTab(QWidget):
         self.initUI()
         self.original_lengths = {
             'key': 0,
-            'message': 0,
+            'message.txt': 0,
             'encrypted': 0
         }
 
@@ -104,7 +104,7 @@ class ViewEditTab(QWidget):
                 self.message_data = file.read()
             format_type = self.message_format_selector.currentText()
             self.display_data_in_editor(self.message_data, format_type, self.message_editor)
-            self.original_lengths['message'] = len(self.message_data)
+            self.original_lengths['message.txt'] = len(self.message_data)
 
     def save_message(self):
         self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(),
@@ -122,7 +122,8 @@ class ViewEditTab(QWidget):
 
     def save_encrypted_message(self):
         if self.check_length(self.encrypted_editor.toPlainText().strip(), 'encrypted'):
-            self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(), 'Encrypted Files (*.enc)')
+            self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(),
+                                       'Encrypted Files (*.enc)')
 
     def check_length(self, data, data_type):
         try:
@@ -133,7 +134,7 @@ class ViewEditTab(QWidget):
                 elif self.key_format_selector.currentText() == "Шестнадцатеричный":
                     data_length = len(hex_to_bytes(data))
                 else:
-                    data_length = len(data.encode('utf-8'))
+                    data_length = len(data.encode('windows-1251'))
             elif data_type == 'encrypted':
                 expected_length = self.original_lengths['encrypted']
                 if self.encrypted_format_selector.currentText() == "Двоичный":
@@ -141,12 +142,13 @@ class ViewEditTab(QWidget):
                 elif self.encrypted_format_selector.currentText() == "Шестнадцатеричный":
                     data_length = len(hex_to_bytes(data))
                 else:
-                    data_length = len(data.encode('utf-8'))
+                    data_length = len(data.encode('windows-1251'))
             else:
                 return True  # Исходное сообщение не проверяется
 
+            # Проверка длины данных
             if data_length != expected_length:
-                raise ValueError("Длина данных не соответствует исходной длине.")
+                raise ValueError(f"Длина данных ({data_length}) не соответствует исходной длине ({expected_length}).")
             return True
         except ValueError as ve:
             QMessageBox.warning(self, "Ошибка", str(ve))
