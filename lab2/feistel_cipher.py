@@ -72,10 +72,34 @@ class FeistelCipher:
         return scrambled
 
     def _split_blocks(self, data: bytes, byte_input: bool = False) -> list:
-        if len(data) % 8 != 0:
-            data += b'\0' * (8 - len(data) % 8)  # Дополнение данных до кратности 8 байтам
+        if not isinstance(data, bytes):
+            raise ValueError("Data must be of type 'bytes'.")
 
+        original_length = len(data)
+
+        # Дополнение данных до кратности 8 байтам
+        if original_length % 8 != 0:
+            data += b'\0' * (8 - original_length % 8)
+
+        # Проверка длины после дополнения
+        padded_length = len(data)
+        if padded_length % 8 != 0:
+            raise ValueError(f"Data length after padding is not a multiple of 8: {padded_length}")
+
+        blocks = []
         if byte_input:
-            return [struct.unpack('>Q', data[i:i+8])[0] for i in range(0, len(data), 8)]
+            # Разбиение на блоки из 8 байт для byte_input
+            for i in range(0, len(data), 8):
+                block = struct.unpack('>Q', data[i:i + 8])[0]
+                blocks.append(block)
         else:
-            return [int.from_bytes(data[i:i+8], byteorder='big') for i in range(0, len(data), 8)]
+            # Разбиение на блоки из 8 байт для обычного ввода
+            for i in range(0, len(data), 8):
+                block = int.from_bytes(data[i:i + 8], byteorder='big')
+                blocks.append(block)
+
+        # Проверка результата
+        if not blocks:
+            raise ValueError("No blocks were created from the input data.")
+
+        return blocks
