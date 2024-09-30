@@ -44,14 +44,27 @@ class FeistelCipher:
         return new_left, new_right
 
     def F(self, Vi: int) -> int:
-        return ((Vi << 3) & 0xFFFFFFFF) | (Vi >> 5)  # Более сложная функция F
+        return ((Vi << 3) & 0xFFFFFFFF) | (Vi >> 5)
 
     def F_with_X(self, Vi: int, Xi: int) -> int:
+        """
+        Реализует функцию F(Vi, X) = S(X) XOR Vi, где S(X) - 32-битная последовательность,
+        сгенерированная 16-битным скремблером с шаблоном 0x4003.
+        """
         scrambled_value = self.scrambler(Xi)
-        return scrambled_value ^ Vi
+        result = scrambled_value ^ Vi
+        print(f"F_with_X: S(X) = {scrambled_value:032b}, V_i = {Vi:032b}, Result = {result:032b}")
+        return result
 
     def scrambler(self, value: int) -> int:
-        return ((value << 3) & 0xFFFFFFFF) | (value >> 5)  # Пример скремблера
+        # 16-битный шаблон 0x4003 (0100 0000 0000 0011)
+        seed = 0x4003
+
+        # Генерация 32-битной последовательности путем повторения шаблона дважды
+        scrambled_sequence = (seed << 16) | seed  # 0x40034003
+
+        print(f"Scrambler({value:032b}) = {scrambled_sequence:032b}")
+        return scrambled_sequence
 
     def get_subkey_method_a(self, round_num: int) -> int:
         start_bit = round_num % 64

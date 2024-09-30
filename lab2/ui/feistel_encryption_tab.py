@@ -95,6 +95,7 @@ class FeistelEncryptionTab(QWidget):
 
     def decrypt(self):
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
+        function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
 
         key_path = self.file_ops.get_open_file("Выберите ключевой файл")
         if not key_path:
@@ -104,7 +105,7 @@ class FeistelEncryptionTab(QWidget):
         if key is None:
             return
 
-        cipher = FeistelCipher(subkey_method=method, key=key)
+        cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
 
         file_path = self.file_ops.get_open_file("Выберите файл для дешифрования")
         if not file_path:
