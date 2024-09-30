@@ -22,23 +22,16 @@ class FeistelCipher:
         right = block & 0xFFFFFFFF
 
         if encrypt:
-            print(f"Encrypting block: {block:064b}")
             for round_num in range(self.rounds):
-                print(f"Round {round_num} before: L={left:032b}, R={right:032b}")
                 left, right = self._feistel_round(left, right, round_num)
-                print(f"Round {round_num} after: L={left:032b}, R={right:032b}")
         else:
-            print(f"Decrypting block: {block:064b}")
             for round_num in reversed(range(self.rounds)):
-                print(f"Round {round_num} before: L={left:032b}, R={right:032b}")
-                left, right = self._feistel_round(left, right, round_num)
-                print(f"Round {round_num} after: L={left:032b}, R={right:032b}")
+                right, left = self._feistel_round(right, left, round_num)
 
         return (left << 32) | right
 
     def _feistel_round(self, left: int, right: int, round_num: int) -> tuple:
         subkey = self._get_subkey(round_num)
-        print(f"Round {round_num}: Subkey = {subkey:032b}")  # Вывод подключа
         new_left = right
 
         if self.function_type == 0:
@@ -51,27 +44,27 @@ class FeistelCipher:
         return new_left, new_right
 
     def F(self, Vi: int) -> int:
-        result = ((Vi << 3) & 0xFFFFFFFF) | ((Vi >> 5) & 0xFFFFFFFF)
-        print(f"F({Vi:032b}) = {result:032b}")
-        return result
+        return ((Vi << 3) & 0xFFFFFFFF) | (Vi >> 5)
 
     def F_with_X(self, Vi: int, Xi: int) -> int:
+        """
+        Реализует функцию F(Vi, X) = S(X) XOR Vi, где S(X) - 32-битная последовательность,
+        сгенерированная 16-битным скремблером с шаблоном 0x4003.
+        """
         scrambled_value = self.scrambler(Xi)
-        return scrambled_value ^ Vi
+        result = scrambled_value ^ Vi
+        print(f"F_with_X: S(X) = {scrambled_value:032b}, V_i = {Vi:032b}, Result = {result:032b}")
+        return result
 
     def scrambler(self, value: int) -> int:
-        # Применение 16-битной последовательности 0x4003
+        # 16-битный шаблон 0x4003 (0100 0000 0000 0011)
         seed = 0x4003
-        result = 0
 
-        # Генерация 32-битной последовательности
-        for i in range(32):
-            bit = (value >> i) & 1  # Получение i-го бита
-            scrambler_bit = (seed >> (i % 16)) & 1  # Получение бита из 16-битного значения
-            result |= (bit ^ scrambler_bit) << i  # Применение XOR и установка в результат
+        # Генерация 32-битной последовательности путем повторения шаблона дважды
+        scrambled_sequence = (seed << 16) | seed  # 0x40034003
 
-        print(f"Scrambler({value:032b}) = {result:032b}")
-        return result
+        print(f"Scrambler({value:032b}) = {scrambled_sequence:032b}")
+        return scrambled_sequence
 
     def get_subkey_method_a(self, round_num: int) -> int:
         start_bit = round_num % 64
