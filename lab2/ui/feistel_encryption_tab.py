@@ -27,6 +27,12 @@ class FeistelEncryptionTab(QWidget):
         self.subkey_method_combo.addItem("Способ B: Скремблер из 8 бит", 1)
         layout.addWidget(self.subkey_method_combo)
 
+        # Комбобокс для выбора функции F
+        self.function_combo = QComboBox()
+        self.function_combo.addItem("Единичная функция F(Vi) = Vi", 0)
+        self.function_combo.addItem("Функция F(Vi, X) = S(X) XOR Vi", 1)
+        layout.addWidget(self.function_combo)
+
         self.test_results = QLabel()
         layout.addWidget(self.test_results)
 
@@ -45,8 +51,9 @@ class FeistelEncryptionTab(QWidget):
     def encrypt(self):
         options = QFileDialog.Options()
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
+        function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
         key = self.key_ops.generate_random_key()
-        cipher = FeistelCipher(subkey_method=method, key=key)
+        cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
 
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Выберите файл для шифрования", "", "Все файлы (*)", options=options

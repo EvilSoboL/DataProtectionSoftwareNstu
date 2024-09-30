@@ -7,3 +7,6 @@ if __name__ == "__main__":
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+
+
+#TODO A_2 шифрование неверно расшифровывает сообщение
