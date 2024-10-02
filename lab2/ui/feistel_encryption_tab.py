@@ -82,8 +82,16 @@ class FeistelEncryptionTab(QWidget):
 
         # Изменяем бит в ключе или тексте
         if change_target == 0:
+            # Проверяем, что позиция бита находится в допустимых пределах для текста
+            if bit_position >= len(plaintext) * 8:
+                QMessageBox.warning(self, "Ошибка", "Позиция бита выходит за пределы длины текста.")
+                return
             plaintext = self._change_bit(plaintext, bit_position)
-        else:
+
+        if change_target == 1:
+            if bit_position >= len(key) * 8:
+                QMessageBox.warning(self, "Ошибка", "Позиция бита выходит за пределы длины ключа.")
+                return
             key = self._change_bit(key, bit_position)
 
         save_path, _ = QFileDialog.getSaveFileName(
@@ -99,7 +107,10 @@ class FeistelEncryptionTab(QWidget):
         if not key_save_path:
             return
 
-        self.key_ops.save_key_to_file(key, key_save_path)
+        try:
+            self.key_ops.save_key_to_file(key, key_save_path)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ключ не сохранен: {str(e)}")
 
         try:
             encrypted_data = cipher.encrypt(plaintext)
@@ -146,8 +157,17 @@ class FeistelEncryptionTab(QWidget):
             self.file_ops.show_error("Ошибка дешифрования", str(e))
 
     def _change_bit(self, data: bytes, bit_position: int) -> bytes:
-        byte_index = bit_position // 8
-        bit_index = bit_position % 8
-        modified_data = bytearray(data)
-        modified_data[byte_index] ^= (1 << (7 - bit_index))  # Инвертируем указанный бит
-        return bytes(modified_data)
+        # Преобразуем данные в целое число
+        try:
+            data_as_int = int.from_bytes(data, byteorder='big')
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка при преобразовании данных в целое число: {str(e)}")
+
+        # Изменяем указанный бит
+        try:
+            data_as_int ^= (1 << bit_position)
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка при изменении указанного бита: {str(e)}")
+
+        # Преобразуем данные обратно в байты, длина должна остаться прежней
+        return data_as_int.to_bytes(len(data), byteorder='big')

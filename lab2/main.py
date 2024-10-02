@@ -10,3 +10,5 @@ if __name__ == "__main__":
     window.show()
     sys.exit(app.exec_())
 
+
+# TODO Process finished with exit code -1073740791 (0xC0000409) при попытке изменения байта ключа
