@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QFileDialog, QMessageBox, QLineEdit
 from lab2.utils.file_operations import FileOperations
 from lab2.utils.key_operations import KeyOperations
 from lab2.feistel_cipher import FeistelCipher
@@ -14,6 +14,15 @@ class FeistelEncryptionTab(QWidget):
 
     def initUI(self):
         layout = QVBoxLayout()
+
+        self.bit_position_input = QLineEdit(self)
+        self.bit_position_input.setPlaceholderText("Введите позицию изменяемого бита")
+        layout.addWidget(self.bit_position_input)
+
+        self.change_target_combo = QComboBox()
+        self.change_target_combo.addItem("Изменить бит в открытом тексте", 0)
+        self.change_target_combo.addItem("Изменить бит в ключе", 1)
+        layout.addWidget(self.change_target_combo)
 
         # Описание методов получения подключей
         description_label = QLabel("Выберите способ получения подключей для каждого раунда шифрования:\n"
@@ -67,6 +76,15 @@ class FeistelEncryptionTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка чтения файла: {str(e)}")
             return
+
+        bit_position = int(self.bit_position_input.text())  # Получаем позицию бита
+        change_target = self.change_target_combo.currentIndex()  # 0 - текст, 1 - ключ
+
+        # Изменяем бит в ключе или тексте
+        if change_target == 0:
+            plaintext = self._change_bit(plaintext, bit_position)
+        else:
+            key = self._change_bit(key, bit_position)
 
         save_path, _ = QFileDialog.getSaveFileName(
             self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)", options=options
@@ -126,3 +144,10 @@ class FeistelEncryptionTab(QWidget):
             self.test_results.setText(f"Дешифрование завершено. Файл сохранен как: {save_path}")
         except Exception as e:
             self.file_ops.show_error("Ошибка дешифрования", str(e))
+
+    def _change_bit(self, data: bytes, bit_position: int) -> bytes:
+        byte_index = bit_position // 8
+        bit_index = bit_position % 8
+        modified_data = bytearray(data)
+        modified_data[byte_index] ^= (1 << (7 - bit_index))  # Инвертируем указанный бит
+        return bytes(modified_data)

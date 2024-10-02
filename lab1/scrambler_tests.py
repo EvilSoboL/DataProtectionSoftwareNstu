@@ -2,10 +2,10 @@ import math
 
 
 def calculate_period(seq):
-    """Расчет периода скремблера"""
+    """Расчет периода скремблера с учётом возможных сдвигов."""
     n = len(seq)
     for i in range(1, n // 2 + 1):
-        if seq[:i] == seq[i:2 * i]:
+        if all(seq[j] == seq[j + i] for j in range(n - i)):
             return i
     return n  # Если период не найден, возвращаем длину последовательности
 
