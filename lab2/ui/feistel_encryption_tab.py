@@ -25,9 +25,10 @@ class FeistelEncryptionTab(QWidget):
         layout.addWidget(self.change_target_combo)
 
         # Описание методов получения подключей
-        description_label = QLabel("Выберите способ получения подключей для каждого раунда шифрования:\n"
-                                   "Способ A: Цепочка из 32 бит, которая начинается с i-го бита ключа и циклически повторяется.\n"
-                                   "Способ B: Цепочка из 8 бит используется как начальное значение для скремблера, который генерирует 32-битный подключ.")
+        description_label = QLabel(
+            "Выберите способ получения подключей для каждого раунда шифрования:\n"
+            "Способ A: Цепочка из 32 бит, которая начинается с i-го бита ключа и циклически повторяется.\n"
+            "Способ B: Цепочка из 8 бит используется как начальное значение для скремблера, который генерирует 32-битный подключ.")
         layout.addWidget(description_label)
 
         # Комбобокс для выбора способа получения подключей
@@ -62,10 +63,11 @@ class FeistelEncryptionTab(QWidget):
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
         function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
         key = self.key_ops.generate_random_key()
+
         cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
 
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Выберите файл для шифрования", "", "Все файлы (*)", options=options
+            self, "Выберите файл для шифрования", "", "Файлы сообщений (*.txt)", options=options
         )
         if not file_path:
             return
@@ -85,13 +87,11 @@ class FeistelEncryptionTab(QWidget):
             # Проверяем, что позиция бита находится в допустимых пределах для текста
             if bit_position >= len(plaintext) * 8:
                 QMessageBox.warning(self, "Ошибка", "Позиция бита выходит за пределы длины текста.")
-                return
             plaintext = self._change_bit(plaintext, bit_position)
 
         if change_target == 1:
-            if bit_position >= len(key) * 8:
+            if bit_position >= len(key):
                 QMessageBox.warning(self, "Ошибка", "Позиция бита выходит за пределы длины ключа.")
-                return
             key = self._change_bit(key, bit_position)
 
         save_path, _ = QFileDialog.getSaveFileName(
@@ -158,16 +158,9 @@ class FeistelEncryptionTab(QWidget):
 
     def _change_bit(self, data: bytes, bit_position: int) -> bytes:
         # Преобразуем данные в целое число
-        try:
-            data_as_int = int.from_bytes(data, byteorder='big')
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка при преобразовании данных в целое число: {str(e)}")
+        data_as_int = int.from_bytes(data, byteorder='big')
 
-        # Изменяем указанный бит
-        try:
-            data_as_int ^= (1 << bit_position)
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка при изменении указанного бита: {str(e)}")
+        data_as_int ^= (1 << bit_position)
 
         # Преобразуем данные обратно в байты, длина должна остаться прежней
         return data_as_int.to_bytes(len(data), byteorder='big')

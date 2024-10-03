@@ -12,3 +12,4 @@ if __name__ == "__main__":
 
 
 # TODO Process finished with exit code -1073740791 (0xC0000409) при попытке изменения байта ключа
+# TODO На вход поступают не байты а int

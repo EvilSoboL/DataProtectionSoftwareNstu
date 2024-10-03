@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QComboBox, QTextEdit, QMessageBox
 )
 from lab1.validators import validate_binary, validate_hexadecimal
-from lab1.utils import (
+from lab1.converter import (
     bytes_to_binary, bytes_to_hex, bytes_to_text,
     binary_to_bytes, hex_to_bytes, text_to_bytes
 )
@@ -23,14 +23,16 @@ class ViewEditTab(QWidget):
     def initUI(self):
         layout = QVBoxLayout()
 
-        # Ключ
+        format_selector = ["Двоичный", "Шестнадцатеричный", "Символьный"]
+
+        # Редактирование и просмотр ключа
         layout.addWidget(QLabel("Ключ"))
         self.load_key_button = QPushButton('Открыть и редактировать ключ')
         self.load_key_button.clicked.connect(self.load_key)
         layout.addWidget(self.load_key_button)
 
         self.key_format_selector = QComboBox()
-        self.key_format_selector.addItems(["Двоичный", "Шестнадцатеричный", "Символьный"])
+        self.key_format_selector.addItems(format_selector)
         layout.addWidget(self.key_format_selector)
 
         self.key_editor = QTextEdit()
@@ -40,14 +42,14 @@ class ViewEditTab(QWidget):
         self.save_key_button.clicked.connect(self.save_key)
         layout.addWidget(self.save_key_button)
 
-        # Исходное сообщение
+        # Редактирование и просмотр исходного сообщения
         layout.addWidget(QLabel("Исходное сообщение"))
         self.load_message_button = QPushButton('Открыть и редактировать исходное сообщение')
         self.load_message_button.clicked.connect(self.load_message)
         layout.addWidget(self.load_message_button)
 
         self.message_format_selector = QComboBox()
-        self.message_format_selector.addItems(["Двоичный", "Шестнадцатеричный", "Символьный"])
+        self.message_format_selector.addItems(format_selector)
         layout.addWidget(self.message_format_selector)
 
         self.message_editor = QTextEdit()
@@ -57,14 +59,14 @@ class ViewEditTab(QWidget):
         self.save_message_button.clicked.connect(self.save_message)
         layout.addWidget(self.save_message_button)
 
-        # Зашифрованное сообщение
+        # Редактирование и просмотр зашифрованного сообщения
         layout.addWidget(QLabel("Зашифрованное сообщение"))
         self.load_encrypted_button = QPushButton('Открыть и редактировать зашифрованное сообщение')
         self.load_encrypted_button.clicked.connect(self.load_encrypted_message)
         layout.addWidget(self.load_encrypted_button)
 
         self.encrypted_format_selector = QComboBox()
-        self.encrypted_format_selector.addItems(["Двоичный", "Шестнадцатеричный", "Символьный"])
+        self.encrypted_format_selector.addItems(format_selector)
         layout.addWidget(self.encrypted_format_selector)
 
         self.encrypted_editor = QTextEdit()

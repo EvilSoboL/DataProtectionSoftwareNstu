@@ -6,9 +6,7 @@ from lab1.ui.encryption_tab import EncryptionTab
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.initUI()
 
-    def initUI(self):
         self.tabs = QTabWidget()
 
         self.view_edit_tab = ViewEditTab()
@@ -18,5 +16,4 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.encryption_tab, "Шифрование/Расшифрование")
 
         self.setCentralWidget(self.tabs)
-        self.setWindowTitle('Шифрование и редактирование')
-
+        self.setWindowTitle('Лабораторная работа №1')
