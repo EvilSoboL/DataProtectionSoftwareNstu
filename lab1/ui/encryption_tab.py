@@ -1,12 +1,3 @@
-def calculate_period(seq):
-    """Расчет периода скремблера с учётом возможных сдвигов."""
-    n = len(seq)
-    for i in range(1, n // 2 + 1):
-        if all(seq[j] == seq[j + i] for j in range(n - i)):
-            return i
-    return n  # Если период не найден, возвращаем длину последовательности
-
-
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton, QComboBox, QFileDialog, QMessageBox, QLabel, QLineEdit
 from lab1.encryption import generate_key, encrypt, scramble_encrypt, scramble_decrypt
 from lab1.scrambler_tests import (
@@ -14,6 +5,15 @@ from lab1.scrambler_tests import (
 )  # Импортируем функции тестирования
 
 import os
+
+
+def calculate_period(seq):
+    """Расчет периода скремблера с учётом возможных сдвигов."""
+    n = len(seq)
+    for i in range(1, n // 2 + 1):
+        if all(seq[j] == seq[j + i] for j in range(n - i)):
+            return i
+    return n  # Если период не найден, возвращаем длину последовательности
 
 
 class EncryptionTab(QWidget):

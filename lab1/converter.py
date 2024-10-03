@@ -20,8 +20,12 @@ def binary_to_bytes(data: str) -> bytes:
 
 def hex_to_bytes(data: str) -> bytes:
     """Преобразует строку шестнадцатеричного представления в байты"""
-    return bytearray.fromhex(data)
+    return bytes.fromhex(data)
 
+def hex_to_text(data: str) -> str:
+    """Преобразование шестнадцатеричной строки в строку текста (Windows-1251)"""
+    byte = hex_to_bytes(data)
+    return bytes_to_text(byte)
 
 def text_to_bytes(data: str) -> bytes:
     """Преобразует строку текста (Windows-1251) в байты"""
@@ -34,7 +38,11 @@ def text_to_hex(data: str) -> str:
     return byte.hex()
 
 
-def hex_to_text(data: str) -> str:
-    """Преобразование шестнадцатеричной строки в строку текста (Windows-1251)"""
-    byte = hex_to_bytes(data)
-    return bytes_to_text(byte)
+def text_to_binary(data: str) -> str:
+    """Преобразование строки текста (Windows-1251) в двоичный формат"""
+    byte = text_to_bytes(data)
+    binary = bytes_to_binary(byte)
+    return binary
+
+
+

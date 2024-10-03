@@ -9,14 +9,17 @@ def validate_binary(data):
 
 def validate_hexadecimal(data):
     """Проверяет, что данные содержат только шестнадцатеричные символы."""
-    pattern = r'^[0-9a-fA-F]+$'
-    return re.fullmatch(pattern, data.strip()) is not None
+    try:
+        int(data, 16)
+        return True
+    except ValueError:
+        return False
 
 
 def validate_text(data):
-    """Проверяет, что данные являются корректным текстом (UTF-8)."""
+    """Проверяет, что данные являются корректным текстом (windows-1251)."""
     try:
-        data.encode('utf-8')
+        data.encode('windows-1251')
         return True
     except UnicodeEncodeError:
         return False
