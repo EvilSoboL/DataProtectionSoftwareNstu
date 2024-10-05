@@ -1,7 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 from lab1.ui.main_window import MainWindow
-from lab1.gamma_encryption import generate_key, encrypt
 
 
 def main():
