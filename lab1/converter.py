@@ -15,21 +15,27 @@ def bytes_to_text(data: bytes) -> str:
 
 def binary_to_bytes(data: str) -> bytes:
     """Преобразует строку двоичного представления в байты"""
-    return bytes(int(b, 2) for b in data.split())
+    try:
+        byte = bytearray(int(b, 2) for b in data.split())
+        return byte
+    except Exception as e:
+        raise ValueError('Неверный двоичный формат!')
 
 
 def hex_to_bytes(data: str) -> bytes:
     """Преобразует строку шестнадцатеричного представления в байты"""
     return bytes.fromhex(data)
 
+
 def hex_to_text(data: str) -> str:
     """Преобразование шестнадцатеричной строки в строку текста (Windows-1251)"""
     byte = hex_to_bytes(data)
     return bytes_to_text(byte)
 
+
 def text_to_bytes(data: str) -> bytes:
     """Преобразует строку текста (Windows-1251) в байты"""
-    return data.encode('windows-1251')
+    return bytearray(data, 'windows-1251')
 
 
 def text_to_hex(data: str) -> str:

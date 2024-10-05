@@ -93,6 +93,7 @@ class ViewEditTab(QWidget):
         with open(key_file_path, 'rb') as key_file:
             key = key_file.read()
 
+        self.original_byte_lengths['key'] = len(key)
         format_type = self.key_format_selector.currentText()
         self.display_data_in_editor(key, format_type, self.key_editor)
 
@@ -110,43 +111,21 @@ class ViewEditTab(QWidget):
             encrypted_message = file.read()
 
         format_type = self.encrypted_format_selector.currentText()
-        self.save_original_length(encrypted_message, 'encrypted', format_type)
+        self.original_byte_lengths['encrypted'] = len(encrypted_message)
         self.display_data_in_editor(encrypted_message, format_type, self.encrypted_editor)
-
-    def save_original_length(self, data: bytes | str, data_type: str, format_type: str) -> None:
-        if data_type == 'key' and format_type == 'Двоичный':
-            self.original_byte_lengths['key'] = len(binary_to_bytes(data))
-
-        elif data_type == 'key' and format_type == 'Шестнадцатеричный':
-            self.original_byte_lengths['key'] = len(hex_to_bytes(data))
-
-        elif data_type == 'encrypted' and format_type == 'Двоичный':
-            self.original_byte_lengths['encrypted'] = len(binary_to_bytes(data))
-
-        elif data_type == 'encrypted' and format_type == 'Шестнадцатеричный':
-            self.original_byte_lengths['encrypted'] = len(hex_to_bytes(data))
 
     # Сохранение отредактированного ключа, сообщения и зашифрованного сообщения
     def save_data_from_editor(self, editor, format_type, file_filter):
         data = editor.toPlainText().strip()
 
         if format_type == "Двоичный":
-            if validate_binary(data):
-                data_bytes = binary_to_bytes(data)
-            else:
-                raise ValueError("Некорректный двоичный формат.")
+            data_bytes = binary_to_bytes(data)
 
         elif format_type == "Шестнадцатеричный":
-            if validate_hexadecimal(data):
-                data_bytes = hex_to_bytes(data)
-            else:
-                raise ValueError("Некорректный шестнадцатеричный формат.")
+            data_bytes = hex_to_bytes(data)
 
         elif format_type == "Символьный":
-            if validate_text(data):
-                data_bytes = text_to_bytes(data)
-            else:
-                raise ValueError("Некорректный формат windows-1251.")
+            data_bytes = text_to_bytes(data)
 
         file_path, _ = QFileDialog.getSaveFileName(self, f'Сохранить {file_filter}', '', file_filter)
         with open(file_path, 'wb') as file:
@@ -154,48 +133,53 @@ class ViewEditTab(QWidget):
         QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
 
     # Сохранение ключа, сообщения и зашифрованного сообщения
-    def check_length(self, data, data_type) -> bool:
-        if data_type == 'key':
-            expected_length = self.original_byte_lengths['key']
-            if self.key_format_selector.currentText() == "Двоичный":
-                data_length = len(binary_to_bytes(data))
-            elif self.key_format_selector.currentText() == "Шестнадцатеричный":
-                data_length = len(hex_to_bytes(data))
-            else:
-                data_length = len(data.encode('windows-1251'))
-
-        elif data_type == 'encrypted':
-            expected_length = self.original_byte_lengths['encrypted']
-
-            if self.encrypted_format_selector.currentText() == "Двоичный":
-                data_length = len(binary_to_bytes(data))
-
-            elif self.encrypted_format_selector.currentText() == "Шестнадцатеричный":
-                data_length = len(hex_to_bytes(data))
-
-            else:
-                data_length = len(data.encode('windows-1251'))
-
-        # Проверка длины данных
-        if data_length != expected_length:
-            raise ValueError(f"Длина данных ({data_length}) не соответствует исходной длине ({expected_length}).")
-        else:
-            return True
-
     def save_key(self):
         data = self.key_editor.toPlainText().strip()
-        if self.check_length(data, data_type='key'):
-            self.save_data_from_editor(self.key_editor, self.key_format_selector.currentText(), 'Key Files (*.key)')
-        else:
-            QMessageBox.warning(self, "Ошибка")
-            raise ValueError(f"Длина данных!")
+        key_format = self.key_format_selector.currentText()
+
+        if key_format == 'Двоичный':
+            if len(binary_to_bytes(data)) == self.original_byte_lengths['key'] and validate_binary(data):
+                self.save_data_from_editor(self.key_editor, 'Двоичный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
+
+        elif key_format == 'Шестнадцатеричный':
+            if len(hex_to_bytes(data)) == self.original_byte_lengths['key'] and validate_hexadecimal(data):
+                self.save_data_from_editor(self.key_editor, 'Шестнадцатеричный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
+
+        elif key_format == 'Символьный':
+            if len(text_to_bytes(data)) == self.original_byte_lengths['key']:
+                self.save_data_from_editor(self.key_editor, 'Символьный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
 
     def save_message(self):
         self.save_data_from_editor(self.message_editor, self.message_format_selector.currentText(), 'Text Files (*.txt)')
 
     def save_encrypted_message(self):
         data = self.encrypted_editor.toPlainText().strip()
-        if self.check_length(data, 'encrypted'):
-            self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(), 'Encrypted Files (*.enc)')
+        key_format = self.key_format_selector.currentText()
+        #if self.check_length(data, 'encrypted'):
+        self.save_data_from_editor(self.encrypted_editor, self.encrypted_format_selector.currentText(), 'Encrypted Files (*.enc)')
+
+        if key_format == 'Двоичный':
+            if len(binary_to_bytes(data)) == self.original_byte_lengths['encrypted'] and validate_binary(data):
+                self.save_data_from_editor(self.encrypted_editor, 'Двоичный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
+
+        elif key_format == 'Шестнадцатеричный':
+            if len(hex_to_bytes(data)) == self.original_byte_lengths['encrypted'] and validate_hexadecimal(data):
+                self.save_data_from_editor(self.encrypted_editor, 'Шестнадцатеричный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
+
+        elif key_format == 'Символьный':
+            if len(text_to_bytes(data)) == self.original_byte_lengths['encrypted']:
+                self.save_data_from_editor(self.encrypted_editor, 'Символьный', 'Key Files (*.key)')
+            else:
+                QMessageBox.warning(self, "Длина сохраняемого сообщения не равна длине исходного сообщения")
 
 
