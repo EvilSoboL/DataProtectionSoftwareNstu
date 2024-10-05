@@ -2,7 +2,8 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel,
     QComboBox, QTextEdit, QMessageBox
 )
-from lab1.converter import bytes_to_binary, binary_to_bytes
+from lab1.binary_converter import bytes_to_binary, binary_to_bytes
+from lab1.validators import validate_binary, validate_hexadecimal
 
 
 class ViewEditTab(QWidget):
@@ -96,9 +97,13 @@ class ViewEditTab(QWidget):
         data = editor.toPlainText().strip()
 
         if format_type == "Двоичный":
+            if not validate_binary(data):
+                raise ValueError("Некорректный двоичный формат!")
             data_in_bytes = binary_to_bytes(data)
 
         elif format_type == "Шестнадцатеричный":
+            if not validate_hexadecimal(data):
+                raise ValueError('Некорректный шестнадцатеричный формат!')
             data_in_bytes = bytes.fromhex(data)
 
         elif format_type == "Символьный":
@@ -109,4 +114,3 @@ class ViewEditTab(QWidget):
             with open(file_path, 'wb') as file:
                 file.write(data_in_bytes)
                 QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
-
