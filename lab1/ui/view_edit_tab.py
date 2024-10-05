@@ -95,22 +95,25 @@ class ViewEditTab(QWidget):
 
     def save_data_from_editor(self, editor: QTextEdit, format_type: str, file_filter: str) -> None:
         data = editor.toPlainText().strip()
+        try:
+            if format_type == "Двоичный":
+                if not validate_binary(data):
+                    raise ValueError("Некорректный двоичный формат!")
+                data_in_bytes = binary_to_bytes(data)
 
-        if format_type == "Двоичный":
-            if not validate_binary(data):
-                raise ValueError("Некорректный двоичный формат!")
-            data_in_bytes = binary_to_bytes(data)
+            elif format_type == "Шестнадцатеричный":
+                if not validate_hexadecimal(data):
+                    raise ValueError('Некорректный шестнадцатеричный формат!')
+                data_in_bytes = bytes.fromhex(data)
 
-        elif format_type == "Шестнадцатеричный":
-            if not validate_hexadecimal(data):
-                raise ValueError('Некорректный шестнадцатеричный формат!')
-            data_in_bytes = bytes.fromhex(data)
+            elif format_type == "Символьный":
+                data_in_bytes = bytes(data, 'windows-1251')
 
-        elif format_type == "Символьный":
-            data_in_bytes = bytes(data, 'windows-1251')
+            file_path, _ = QFileDialog.getSaveFileName(self, f'Сохранить {file_filter}', '', file_filter)
+            if file_path:
+                with open(file_path, 'wb') as file:
+                    file.write(data_in_bytes)
+                    QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
 
-        file_path, _ = QFileDialog.getSaveFileName(self, f'Сохранить {file_filter}', '', file_filter)
-        if file_path:
-            with open(file_path, 'wb') as file:
-                file.write(data_in_bytes)
-                QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
+        except ValueError as ve:
+            QMessageBox.warning(self, "Ошибка", str(ve))
