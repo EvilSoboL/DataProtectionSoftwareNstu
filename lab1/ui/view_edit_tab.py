@@ -11,6 +11,13 @@ class ViewEditTab(QWidget):
         super().__init__(parent)
         self.initUI()
 
+        self.text_file_filter = 'Text Files (*.txt)'
+        self.key_file_filter = 'Key Files (*.key)'
+        self.encrypted_file_filter = 'Encrypted Files (*.enc)'
+
+        self.key_byte_size = None
+        self.encrypted_message_byte_size = None
+
     def initUI(self):
         layout = QVBoxLayout()
 
@@ -19,7 +26,7 @@ class ViewEditTab(QWidget):
         # Окно редактирование ключа
         layout.addWidget(QLabel("Редактирование ключа"))
         self.load_key_button = QPushButton('Открыть и редактировать ключ')
-        self.load_key_button.clicked.connect(lambda: None)
+        self.load_key_button.clicked.connect(self.load_key)
         layout.addWidget(self.load_key_button)
 
         self.key_format_selector = QComboBox()
@@ -30,7 +37,7 @@ class ViewEditTab(QWidget):
         layout.addWidget(self.key_editor)
 
         self.save_key_button = QPushButton('Сохранить ключ')
-        self.save_key_button.clicked.connect(lambda: None)
+        self.save_key_button.clicked.connect(self.save_key)
         layout.addWidget(self.save_key_button)
 
         # Окно редактирования исходного сообщения
@@ -53,7 +60,7 @@ class ViewEditTab(QWidget):
         # Окно редактирования зашифрованного сообщения
         layout.addWidget(QLabel("Редактирование зашифрованного сообщения"))
         self.load_encrypted_button = QPushButton('Открыть и редактировать зашифрованное сообщение')
-        self.load_encrypted_button.clicked.connect(lambda: None)
+        self.load_encrypted_button.clicked.connect(self.load_encrypted_message)
         layout.addWidget(self.load_encrypted_button)
 
         self.encrypted_format_selector = QComboBox()
@@ -64,19 +71,40 @@ class ViewEditTab(QWidget):
         layout.addWidget(self.encrypted_editor)
 
         self.save_encrypted_button = QPushButton('Сохранить зашифрованное сообщение')
-        self.save_encrypted_button.clicked.connect(lambda: None)
+        self.save_encrypted_button.clicked.connect(self.save_encrypted_message)
         layout.addWidget(self.save_encrypted_button)
 
         self.setLayout(layout)
 
+    # Отображение ключа, сообщения и зашифрованного сообщения
+    def load_key(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть ключ', '', self.key_file_filter)
+        if file_path:
+            with open(file_path, 'rb') as file:
+                key = file.read()
+
+            self.key_byte_size = len(key)
+            format_type = self.key_format_selector.currentText()
+            self.display_data_in_editor(key, format_type, self.key_editor)
+
     def load_message(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть исходное сообщение', '', 'Text Files (*.txt)')
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть исходное сообщение', '', self.text_file_filter)
         if file_path:
             with open(file_path, 'rb') as file:
                 message = file.read()
 
             format_type = self.message_format_selector.currentText()
             self.display_data_in_editor(message, format_type, self.message_editor)
+
+    def load_encrypted_message(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Открыть зашифрованное сообщение', '', self.encrypted_file_filter)
+        if file_path:
+            with open(file_path, 'rb') as file:
+                encrypted_message = file.read()
+
+            self.encrypted_message_byte_size = len(encrypted_message)
+            format_type = self.encrypted_format_selector.currentText()
+            self.display_data_in_editor(encrypted_message, format_type, self.encrypted_editor)
 
     @staticmethod
     def display_data_in_editor(data: bytes, format_type: str, editor: QTextEdit) -> None:
@@ -89,9 +117,32 @@ class ViewEditTab(QWidget):
         elif format_type == "Символьный":
             editor.setPlainText(data.decode('windows-1251'))
 
+    # Сохранение ключа, сообщения и зашифрованного сообщения
     def save_message(self) -> None:
         format_type = self.message_format_selector.currentText()
-        self.save_data_from_editor(self.message_editor, format_type, 'Text Files (*.txt)')
+        self.save_data_from_editor(self.message_editor, format_type, self.text_file_filter)
+
+    def save_key(self) -> None:
+        format_type = self.key_format_selector.currentText()
+        key = self.key_editor.toPlainText().strip()
+        try:
+            if len(key) != self.key_byte_size:
+                raise ValueError('Длина сохраняемого ключа не равна начальной!')
+            self.save_data_from_editor(self.key_editor, format_type, self.key_file_filter)
+
+        except ValueError as ve:
+            QMessageBox.warning(self, "Ошибка!", str(ve))
+
+    def save_encrypted_message(self) -> None:
+        format_type = self.encrypted_format_selector.currentText()
+        encrypted_message = self.encrypted_editor.toPlainText().strip()
+        try:
+            if len(encrypted_message) != self.encrypted_message_byte_size:
+                raise ValueError('Длина сохраняемого зашифрованного сообщения не равна начальной!')
+            self.save_data_from_editor(self.encrypted_editor, format_type, self.encrypted_file_filter)
+
+        except ValueError as ve:
+            QMessageBox.warning(self, "Ошибка!", str(ve))
 
     def save_data_from_editor(self, editor: QTextEdit, format_type: str, file_filter: str) -> None:
         data = editor.toPlainText().strip()
@@ -116,4 +167,4 @@ class ViewEditTab(QWidget):
                     QMessageBox.information(self, "Успех", "Файл успешно сохранён.")
 
         except ValueError as ve:
-            QMessageBox.warning(self, "Ошибка", str(ve))
+            QMessageBox.warning(self, "Ошибка!", str(ve))
