@@ -62,54 +62,46 @@ class FeistelEncryptionTab(QWidget):
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
         function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
         key = self.key_ops.generate_random_key()
+        key_bytes = int.to_bytes(key, length=(key.bit_length() + 7) // 8, byteorder='big')  # Преобразуем ключ в байты
         cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
 
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Выберите файл для шифрования", "", "Все файлы (*)", options=options
         )
-        if not file_path:
-            return
-
         try:
-            with open(file_path, 'rb') as f:
-                plaintext = f.read()
+            if file_path:
+                with open(file_path, 'rb') as f:
+                    plaintext = f.read()
+
+                bit_position = int(self.bit_position_input.text())  # Получаем позицию бита
+                change_target = self.change_target_combo.currentIndex()  # 0 - текст, 1 - ключ
+
+                # Изменяем бит в ключе или тексте
+                if change_target == 0:
+                    plaintext = self._change_bit(plaintext, bit_position)
+                elif change_target == 1:
+                    key = self._change_bit(key_bytes, bit_position)
+
+                save_path, _ = QFileDialog.getSaveFileName(
+                    self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)", options=options
+                )
+                if save_path:
+                    key_save_path, _ = QFileDialog.getSaveFileName(
+                        self, "Сохранить ключ", os.path.join(os.path.dirname(save_path), "encryption.key"), "Key files (*.key)",
+                        options=options
+                    )
+                    key_as_int = int.from_bytes(key, byteorder='big')  # Преобразуем байты обратно в int
+                    self.key_ops.save_key_to_file(key_as_int, key_save_path)
+
+                    encrypted_data = cipher.encrypt(plaintext)
+                    with open(save_path, 'wb') as f:
+                        f.write(encrypted_data)
+
+                    self.test_results.setText(
+                        f"Шифрование завершено. Файл сохранен как: {save_path}. Ключ сохранен как: {key_save_path}")
+
         except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка чтения файла: {str(e)}")
-            return
-
-        bit_position = int(self.bit_position_input.text())  # Получаем позицию бита
-        change_target = self.change_target_combo.currentIndex()  # 0 - текст, 1 - ключ
-
-        # Изменяем бит в ключе или тексте
-        if change_target == 0:
-            plaintext = self._change_bit(plaintext, bit_position)
-        else:
-            key = self._change_bit(key, bit_position)
-
-        save_path, _ = QFileDialog.getSaveFileName(
-            self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)", options=options
-        )
-        if not save_path:
-            return
-
-        key_save_path, _ = QFileDialog.getSaveFileName(
-            self, "Сохранить ключ", os.path.join(os.path.dirname(save_path), "encryption.key"), "Key files (*.key)",
-            options=options
-        )
-        if not key_save_path:
-            return
-
-        self.key_ops.save_key_to_file(key, key_save_path)
-
-        try:
-            encrypted_data = cipher.encrypt(plaintext)
-            with open(save_path, 'wb') as f:
-                f.write(encrypted_data)
-
-            self.test_results.setText(
-                f"Шифрование завершено. Файл сохранен как: {save_path}. Ключ сохранен как: {key_save_path}")
-        except Exception as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка шифрования: {str(e)}")
+            QMessageBox.warning(self, "Ошибка!", str(e))
 
     def decrypt(self):
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
@@ -149,5 +141,7 @@ class FeistelEncryptionTab(QWidget):
         byte_index = bit_position // 8
         bit_index = bit_position % 8
         modified_data = bytearray(data)
+        if byte_index >= len(modified_data):
+            raise ValueError("Bit position is out of range")
         modified_data[byte_index] ^= (1 << (7 - bit_index))  # Инвертируем указанный бит
         return bytes(modified_data)
