@@ -80,7 +80,7 @@ class FeistelEncryptionTab(QWidget):
                 if change_target == 0:
                     plaintext = self._change_bit(plaintext, bit_position)
                 elif change_target == 1:
-                    key = self._change_bit(key_bytes, bit_position)
+                    key_bytes = self._change_bit(key_bytes, bit_position)
 
                 save_path, _ = QFileDialog.getSaveFileName(
                     self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)", options=options
@@ -90,7 +90,7 @@ class FeistelEncryptionTab(QWidget):
                         self, "Сохранить ключ", os.path.join(os.path.dirname(save_path), "encryption.key"), "Key files (*.key)",
                         options=options
                     )
-                    key_as_int = int.from_bytes(key, byteorder='big')  # Преобразуем байты обратно в int
+                    key_as_int = int.from_bytes(key_bytes, byteorder='big')  # Преобразуем байты обратно в int
                     self.key_ops.save_key_to_file(key_as_int, key_save_path)
 
                     encrypted_data = cipher.encrypt(plaintext)
@@ -141,7 +141,5 @@ class FeistelEncryptionTab(QWidget):
         byte_index = bit_position // 8
         bit_index = bit_position % 8
         modified_data = bytearray(data)
-        if byte_index >= len(modified_data):
-            raise ValueError("Bit position is out of range")
         modified_data[byte_index] ^= (1 << (7 - bit_index))  # Инвертируем указанный бит
         return bytes(modified_data)
