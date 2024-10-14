@@ -1,5 +1,6 @@
 import struct
 
+
 class FeistelCipher:
     def __init__(self, key: int, rounds: int = 16, subkey_method: int = 0, function_type: int = 0):
         self.rounds = rounds
