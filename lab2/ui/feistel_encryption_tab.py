@@ -3,6 +3,7 @@ from lab2.utils.file_operations import FileOperations
 from lab2.utils.key_operations import KeyOperations
 from lab2.feistel_cipher import FeistelCipher
 import os
+import struct
 
 
 class FeistelEncryptionTab(QWidget):
@@ -57,14 +58,16 @@ class FeistelEncryptionTab(QWidget):
 
         self.setLayout(layout)
 
+    def _count_changed_bits(self, original: bytes, modified: bytes) -> int:
+        return sum(bin(o ^ m).count('1') for o, m in zip(original, modified))
+
     def encrypt(self):
         options = QFileDialog.Options()
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
         function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
         key = self.key_ops.generate_random_key()
         key_bytes = int.to_bytes(key, length=(key.bit_length() + 7) // 8, byteorder='big')  # Преобразуем ключ в байты
-        cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
-
+        cipher = FeistelCipher(key=key, rounds=16, subkey_method=method, function_type=function_type)
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Выберите файл для шифрования", "", "Все файлы (*)", options=options
         )
@@ -72,67 +75,70 @@ class FeistelEncryptionTab(QWidget):
             if file_path:
                 with open(file_path, 'rb') as f:
                     plaintext = f.read()
-
                 bit_position = int(self.bit_position_input.text())  # Получаем позицию бита
                 change_target = self.change_target_combo.currentIndex()  # 0 - текст, 1 - ключ
-
                 # Изменяем бит в ключе или тексте
                 if change_target == 0:
                     plaintext = self._change_bit(plaintext, bit_position)
                 elif change_target == 1:
                     key_bytes = self._change_bit(key_bytes, bit_position)
-
                 save_path, _ = QFileDialog.getSaveFileName(
-                    self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)", options=options
+                    self, "Сохранить зашифрованный файл", file_path + ".enc", "Зашифрованные файлы (*.enc)",
+                    options=options
                 )
                 if save_path:
                     key_save_path, _ = QFileDialog.getSaveFileName(
-                        self, "Сохранить ключ", os.path.join(os.path.dirname(save_path), "encryption.key"), "Key files (*.key)",
-                        options=options
+                        self, "Сохранить ключ", os.path.join(os.path.dirname(save_path), "encryption.key"),
+                        "Key files (*.key)", options=options
                     )
                     key_as_int = int.from_bytes(key_bytes, byteorder='big')  # Преобразуем байты обратно в int
                     self.key_ops.save_key_to_file(key_as_int, key_save_path)
 
+                    round_data = []
+                    blocks = cipher._split_blocks(plaintext)
+                    for block in blocks:
+                        initial_block = block
+                        for round_num in range(cipher.rounds):
+                            block = cipher._feistel_round_block(block, round_num)
+                            changed_bits = self._count_changed_bits(
+                                struct.pack('>Q', initial_block), struct.pack('>Q', block))
+                            round_data.append((round_num + 1, changed_bits))
+
+                    # Сохраняем данные для графика
+                    with open(save_path + "round_data.txt", 'w') as f:
+                        for round_number, changed_bits in round_data:
+                            f.write(f"Round {round_number}: {changed_bits} bits changed\n")
+
                     encrypted_data = cipher.encrypt(plaintext)
                     with open(save_path, 'wb') as f:
                         f.write(encrypted_data)
-
                     self.test_results.setText(
                         f"Шифрование завершено. Файл сохранен как: {save_path}. Ключ сохранен как: {key_save_path}")
-
         except Exception as e:
             QMessageBox.warning(self, "Ошибка!", str(e))
 
     def decrypt(self):
         method = self.subkey_method_combo.currentIndex()  # 0 для метода A, 1 для метода B
         function_type = self.function_combo.currentIndex()  # 0 для единичной функции, 1 для функции F с X
-
         key_path = self.file_ops.get_open_file("Выберите ключевой файл")
         if not key_path:
             return
-
         key = self.key_ops.read_key_file(key_path)
         if key is None:
             return
-
         cipher = FeistelCipher(subkey_method=method, key=key, function_type=function_type)
-
         file_path = self.file_ops.get_open_file("Выберите файл для дешифрования")
         if not file_path:
             return
-
         encrypted_data = self.file_ops.read_file(file_path)
         if encrypted_data is None:
             return
-
         save_path = self.file_ops.get_save_file("Сохранить расшифрованный файл", file_path.replace(".enc", "_decrypted"))
         if not save_path:
             return
-
         try:
             decrypted_data = cipher.decrypt(encrypted_data)
             self.file_ops.write_file(save_path, decrypted_data)
-
             self.test_results.setText(f"Дешифрование завершено. Файл сохранен как: {save_path}")
         except Exception as e:
             self.file_ops.show_error("Ошибка дешифрования", str(e))

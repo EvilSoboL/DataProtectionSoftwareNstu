@@ -10,7 +10,22 @@ class FeistelCipher:
 
     def encrypt(self, plaintext: bytes) -> bytes:
         blocks = self._split_blocks(plaintext)
-        encrypted_blocks = [self._process_block(block, encrypt=True) for block in blocks]
+        round_data = []
+
+        encrypted_blocks = []
+        for block in blocks:
+            initial_block = block
+            for round_num in range(self.rounds):
+                block = self._feistel_round_block(block, round_num)
+                changed_bits = self._count_changed_bits(initial_block, block)
+                round_data.append((round_num + 1, changed_bits))
+
+            encrypted_blocks.append(block)
+
+        with open("round_data.txt", 'w') as f:
+            for round_number, changed_bits in round_data:
+                f.write(f"Round {round_number}: {changed_bits} bits changed\n")
+
         return b''.join(struct.pack('>Q', block) for block in encrypted_blocks)
 
     def decrypt(self, ciphertext: bytes) -> bytes:
@@ -21,37 +36,37 @@ class FeistelCipher:
     def _process_block(self, block: int, encrypt: bool = True) -> int:
         left = (block >> 32) & 0xFFFFFFFF
         right = block & 0xFFFFFFFF
-
         if encrypt:
             for round_num in range(self.rounds):
                 left, right = self._feistel_round(left, right, round_num)
         else:
             for round_num in reversed(range(self.rounds)):
                 right, left = self._feistel_round(right, left, round_num)
+        return (left << 32) | right
 
+    def _feistel_round_block(self, block: int, round_num: int) -> int:
+        left = (block >> 32) & 0xFFFFFFFF
+        right = block & 0xFFFFFFFF
+        left, right = self._feistel_round(left, right, round_num)
         return (left << 32) | right
 
     def _feistel_round(self, left: int, right: int, round_num: int) -> tuple:
         subkey = self._get_subkey(round_num)
         new_left = right
-
         if self.function_type == 0:
             new_right = left ^ self.F(right)
         elif self.function_type == 1:
             new_right = left ^ self.F_with_X(right, subkey)
         else:
             raise ValueError("Неподдерживаемый тип функции.")
-
         return new_left, new_right
 
     def F(self, Vi: int) -> int:
         return ((Vi << 3) & 0xFFFFFFFF) | (Vi >> 5)
 
     def F_with_X(self, Vi: int, Xi: int) -> int:
-        """
-        Реализует функцию F(Vi, X) = S(X) XOR Vi, где S(X) - 32-битная последовательность,
-        сгенерированная 16-битным скремблером с шаблоном 0x4003.
-        """
+        """ Реализует функцию F(Vi, X) = S(X) XOR Vi, где S(X) - 32-битная последовательность,
+            сгенерированная 16-битным скремблером с шаблоном 0x4003. """
         scrambled_value = self.scrambler(Xi)
         result = scrambled_value ^ Vi
         print(f"F_with_X: S(X) = {scrambled_value:032b}, V_i = {Vi:032b}, Result = {result:032b}")
@@ -60,10 +75,8 @@ class FeistelCipher:
     def scrambler(self, value: int) -> int:
         # 16-битный шаблон 0x4003 (0100 0000 0000 0011)
         seed = 0x4003
-
         # Генерация 32-битной последовательности путем повторения шаблона дважды
         scrambled_sequence = (seed << 16) | seed  # 0x40034003
-
         print(f"Scrambler({value:032b}) = {scrambled_sequence:032b}")
         return scrambled_sequence
 
@@ -99,3 +112,6 @@ class FeistelCipher:
             block = int.from_bytes(data[i:i + 8], byteorder='big')
             blocks.append(block)
         return blocks
+
+    def _count_changed_bits(self, original: int, modified: int):
+        return bin(original ^ modified).count('1')
